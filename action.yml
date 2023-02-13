@@ -1,0 +1,96 @@
+name: "Install Chicken toolchain"
+description: "Install prebuilt Chicken toolchain and add its tools to the PATH."
+inputs:
+  chicken-version:
+    description: "Exact version of Chicken to install"
+    # default: '5.3.0'
+  update-environment:
+    description: "Whether to update environment variables, such as PATH"
+    default: "true"
+  manifest:
+    # Internal. No guarantee on structure or existence is made to external callers.
+    # Override at your own risk.
+    description: "JSON manifest of available Chicken versions"
+    default: |
+      {
+        "5.3.0": {
+          "asset": "tags/v5.3.0",
+          "repo": "ursetto/chicken-versions",
+        },
+        "5.2.0": {
+          "asset": "tags/v5.2.0",
+          "repo": "ursetto/chicken-versions",
+        },
+        "5.1.0": {
+          "asset": "tags/v5.1.0",
+          "repo": "ursetto/chicken-versions",
+        },
+        "5.0.0": {
+          "asset": "tags/v5.0.0",
+          "repo": "ursetto/chicken-versions",
+        },
+        "4.13.0": {
+          "asset": "tags/v4.13.0",
+          "repo": "ursetto/chicken-versions",
+        },
+      }
+outputs:
+  chicken-version:
+    description: "Exact version of Chicken installed"
+    value: ${{ steps.chicken-vars.outputs.chicken-version }}
+  chicken-prefix:
+    description: "Prefix of installed Chicken"
+    value: ${{ steps.chicken-vars.outputs.chicken-prefix }}
+runs:
+  using: "composite"
+  steps:
+    - name: Determine binary variant
+      # macos/windows are placeholders and untested. python-versions only has "win32" and "darwin"
+      # binary variants, but I don't know if a single Chicken will run on all releases.
+      id: os-info
+      run: |
+        case "${{ runner.os }}" in
+          Linux)
+            REL=$(lsb_release -r -s)
+            VARIANT="ubuntu-$REL-x64" ;;
+          macOS)
+            VARIANT="macos-x64" ;;
+          Windows)
+            VARIANT="windows-x64" ;;
+          *) echo "Unknown binary variant for OS"; exit 1 ;;
+        esac
+        echo "binary-variant=$VARIANT" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Download Chicken tarball
+      # Plain curl would probably work fine.
+      uses: dsaltares/fetch-gh-release-asset@1.1.0
+      with:
+        repo: "${{ fromJSON(inputs.manifest)[inputs.chicken-version]['repo'] }}"
+        version: "${{ fromJSON(inputs.manifest)[inputs.chicken-version]['asset'] }}"
+        file: chicken-${{ inputs.chicken-version }}-${{ steps.os-info.outputs.binary-variant }}.tar.gz
+
+    - name: Extract Chicken tarball
+      run: |
+        tar -C / -zxvf chicken-${{ inputs.chicken-version }}-${{ steps.os-info.outputs.binary-variant }}.tar.gz
+      shell: bash
+
+    - name: Set Chicken variables
+      id: chicken-vars
+      run: |
+        CHICKEN_PREFIX=$HOME/.local/chicken/${{ inputs.chicken-version }}
+        $CHICKEN_PREFIX/bin/csi -version
+        echo "chicken-prefix=$CHICKEN_PREFIX" >> $GITHUB_OUTPUT
+        case "${{ inputs.chicken-version }}" in
+          5.*) VER=$($CHICKEN_PREFIX/bin/csi -e '(import (chicken platform)) (print (chicken-version))') ;;
+          4.*) VER=$($CHICKEN_PREFIX/bin/csi -e '(print (chicken-version))') ;;
+        esac
+        if [ -z "$VER" ]; then echo "Unable to obtain installed Chicken version" >&2; exit 1; fi
+
+        echo "chicken-version=$VER" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Add Chicken to path
+      run: echo "${{ steps.chicken-vars.outputs.chicken-prefix }}/bin" >> $GITHUB_PATH
+      shell: bash
+      if: inputs.update-environment == 'true'

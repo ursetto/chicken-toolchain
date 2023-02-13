@@ -1,0 +1,43 @@
+on:
+  - push
+  - workflow_dispatch
+
+jobs:
+  test_chicken:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-22.04
+          - ubuntu-20.04
+        chicken-version:
+          - 5.3.0
+          - 5.2.0
+          - 5.1.0
+          - 5.0.0
+          - 4.13.0
+    runs-on: ${{ matrix.os }}
+    name: Test chicken
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Chicken
+        id: chicken-install
+        uses: ./
+        with:
+          chicken-version: ${{ matrix.chicken-version }}
+
+      - name: Verify Chicken version
+        run: |
+          csi -version
+          case "${{ matrix.chicken-version }}" in
+            5.*) VER=$(csi -e '(import (chicken platform)) (print (chicken-version))') ;;
+            4.*) VER=$(csi -e '(print (chicken-version))') ;;
+            *) echo "Unknown Chicken major version" >&2; exit 1 ;;
+          esac
+          if [ "$VER" != "${{ matrix.chicken-version }}" ]; then
+            echo "Unexpected installed Chicken version $VER"; exit 1
+          fi
+          SVER="${{ steps.chicken-install.outputs.chicken-version }}"
+          if [ "$VER" != "$SVER" ]; then
+            echo "Unexpected output Chicken version $SVER"; exit 1
+          fi
+        shell: bash
