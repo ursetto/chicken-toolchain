@@ -6,14 +6,17 @@ We currently support 5.3.0, 5.2.0, 5.1.0, 5.0.0 and 4.13.0 on Ubuntu 22.04 and 2
 
 ## Basic usage
 
-Here's an example job to test an egg on Chicken 5.3.0 on `ubuntu-latest` with `chicken-install -test`. Place this in your egg's repository, in a file such as `.github/workflows/test.yml`.
+Here's an example job to test an egg on Chicken 5.3.0 on `ubuntu-latest` with `chicken-install -test`. Place this in your egg's repository, in a file such as `.github/workflows/test.yml`. This will run on any opened pull request, a push to an existing pull request, and a direct push to main/master (which includes merging the pull request into main).
 
 ```yaml
 name: Test egg
 on:
-  - push
-  - pull_request
-  - workflow_dispatch
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
 jobs:
   test:
     strategy:
