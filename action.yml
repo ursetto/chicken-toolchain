@@ -15,24 +15,24 @@ inputs:
       {
         "5.3.0": {
           "asset": "tags/v5.3.0",
-          "repo": "ursetto/chicken-versions",
+          "repo": "ursetto/chicken-versions"
         },
         "5.2.0": {
           "asset": "tags/v5.2.0",
-          "repo": "ursetto/chicken-versions",
+          "repo": "ursetto/chicken-versions"
         },
         "5.1.0": {
           "asset": "tags/v5.1.0",
-          "repo": "ursetto/chicken-versions",
+          "repo": "ursetto/chicken-versions"
         },
         "5.0.0": {
           "asset": "tags/v5.0.0",
-          "repo": "ursetto/chicken-versions",
+          "repo": "ursetto/chicken-versions"
         },
         "4.13.0": {
           "asset": "tags/v4.13.0",
-          "repo": "ursetto/chicken-versions",
-        },
+          "repo": "ursetto/chicken-versions"
+        }
       }
 outputs:
   chicken-version:
